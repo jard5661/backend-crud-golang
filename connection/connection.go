@@ -13,7 +13,7 @@ var (
 )
 
 func Connect(){
-	DB, Err = gorm.Open("mysql", "root:@/fajar?charset=utf8&parseTime=True")
+	DB, Err = gorm.Open("mysql", "fajar:q5gJGNVah4leh3Jl@/fajar?charset=utf8&parseTime=True")
 
 	if Err != nil{
 		log.Println("Connection failed", Err)

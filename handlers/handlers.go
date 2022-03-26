@@ -3,7 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
-
+	/* "github.com/rs/cors" */
 	"github.com/gorilla/mux"
 )
 
@@ -17,6 +17,7 @@ func HandleReq() {
 	myRouter.HandleFunc("/user/{id}", GetUserById).Methods("OPTIONS", "GET")
 	myRouter.HandleFunc("/user/{id}", UpdateUser).Methods("OPTIONS", "PUT")
 	myRouter.HandleFunc("/user/{id}", DeleteUser).Methods("OPTIONS", "Delete")
-
+	/* handler := cors.AllowAll().Handler(myRouter)
+	log.Fatal(http.ListenAndServe(":"+configs.GetMainPort(),handler)) */
 	log.Fatal(http.ListenAndServe(":5004", myRouter))
 }
