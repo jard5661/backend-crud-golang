@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var(
@@ -36,6 +37,17 @@ func CountRisk(age int){
 	} 
 }
 
+func HashPassword(password string) (string, error) {
+    bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+    return string(bytes), err
+}
+
+func CheckPasswordHash(password, hash string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+    return err == nil
+}
+
+
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
 	
@@ -43,17 +55,18 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(payloads, &user)
 	
+	hash, _ := HashPassword(user.Password)
+	user.Password = hash
+	
 	CountRisk(user.AGE)
 
 	connection.DB.Create(&user)
 
 	risk_profile := structs.RiskProfile{UserID :user.UserID, MM:mm, Bond:bond, Stock:stock}
-	
 	connection.DB.Create(risk_profile)
 
 	connection.DB.Preload("RiskProfiles").
 	First(&user, user.UserID)
-
 	res := structs.Result{Code: 200, Data: user, Message: "Create User Success"}
 
 	result, err := json.Marshal(res)
@@ -63,6 +76,39 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
+func LoginUser(w http.ResponseWriter, r *http.Request){
+	payloads, _ := ioutil.ReadAll(r.Body)
+	var user structs.User
+	var userPayload structs.User
+
+	json.Unmarshal(payloads, &userPayload)
+	connection.DB.First(&user, userPayload.UserID)
+
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userPayload.Password))	
+	
+	if err != nil {
+		res := structs.Result{Code: 400, Data: "", Message: "Wrong userid/password"}
+		result, err := json.Marshal(res)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.Write(result)
+		return
+	}
+
+	res := structs.Result{Code: 200, Data: user.NAME, Message: "Login Success"}
+
+	result, err := json.Marshal(res)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }

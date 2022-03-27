@@ -13,6 +13,7 @@ type User struct{
 	UserID 			int 			`json:"userid" gorm:"primary_key"`
 	NAME 			string 			`json:"name"`
 	AGE				int				`json:"age"`
+	Password		string			`json:"password"`
 	RiskProfiles	[]RiskProfile 	`json:"details,omitempty" gorm:"foreignkey:UserID"`
 	
 }
